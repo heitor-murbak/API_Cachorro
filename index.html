@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Raça de Cachorro</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Pesquisa de Raça de Cachorro</h1>
+        <select id="breedSelect">
+            <option value="">Selecione uma raça</option>
+        </select>
+        <button onclick="searchBreed()">Buscar</button>
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        async function loadBreeds() {
+            const url = "https://api.thedogapi.com/v1/breeds";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Erro na requisição: ${response.status}`);
+                }
+                
+                const breeds = await response.json();
+                const breedSelect = document.getElementById("breedSelect");
+                
+                breeds.forEach(breed => {
+                    const option = document.createElement("option");
+                    option.value = breed.id;
+                    option.textContent = breed.name;
+                    breedSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar as raças:", error);
+            }
+        }
+
+        async function searchBreed() {
+            const breedId = document.getElementById("breedSelect").value;
+            if (!breedId) {
+                document.getElementById("result").innerHTML = "Selecione uma raça válida.";
+                return;
+            }
+            
+            const url = `https://api.thedogapi.com/v1/breeds/${breedId}`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Erro na requisição: ${response.status}`);
+                }
+                
+                const breedInfo = await response.json();
+                const resultDiv = document.getElementById("result");
+                resultDiv.innerHTML = "";
+                
+                let imageUrl = "https://via.placeholder.com/200";
+                if (breedInfo.reference_image_id) {
+                    imageUrl = `https://cdn2.thedogapi.com/images/${breedInfo.reference_image_id}.jpg`;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="breed-info">
+                        <p><strong>Nome:</strong> ${breedInfo.name}</p>
+                        <p><strong>Temperamento:</strong> ${breedInfo.temperament || "Desconhecido"}</p>
+                        <p><strong>Peso:</strong> ${breedInfo.weight.metric} kg</p>
+                        <p><strong>Altura:</strong> ${breedInfo.height.metric} cm</p>
+                        <p><strong>Expectativa de vida:</strong> ${breedInfo.life_span}</p>
+                        <img src="${imageUrl}" alt="Imagem da raça ${breedInfo.name}">
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById("result").innerHTML = `Erro: ${error.message}`;
+            }
+        }
+        
+        document.addEventListener("DOMContentLoaded", loadBreeds);
+    </script>
+</body>
+</html>
